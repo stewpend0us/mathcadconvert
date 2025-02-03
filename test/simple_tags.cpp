@@ -70,6 +70,37 @@ TEST_CASE( "simple xml tags" )
             REQUIRE( os.str() == "()" );
         }
     }
+    SECTION( "parens tag with content" )
+    {
+        auto paren = init_tag("<ml:parens><ml:id>hello</ml:id></ml:parens>");
+        REQUIRE( sv(paren.name()) == "ml:parens");
+        REQUIRE( sv(paren.first_child().name()) == "ml:id");
+
+        SECTION( "matlab" )
+        {
+            matlab::convert(paren, os);
+            REQUIRE( os.str() == "(hello)" );
+        }
+    }
+    SECTION( "apply mult ")
+    {
+        auto apply_mult = init_tag(R"(
+        <ml:apply>
+            <ml:mult/>
+            <ml:real>0.039</ml:real>
+            <ml:id xml:space="preserve" subscript="t">V</ml:id>
+        </ml:apply>
+        )");
+        REQUIRE( sv(apply_mult.name()) == "ml:apply");
+        REQUIRE( sv(apply_mult.first_child().name()) == "ml:mult");
+
+        SECTION( "matlab" )
+        {
+            matlab::convert(apply_mult, os);
+            REQUIRE( os.str() == "(0.039 * V_t)" );
+        }
+
+    }
 //					<ml:parens>
 //						<ml:apply>
 //							<ml:minus/>
