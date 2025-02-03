@@ -36,6 +36,15 @@ static constexpr auto apply = [](const pugi::xml_node& node, std::ostream& os)
     matlab::convert(b, os);
 	os << ')';
 };
+static constexpr auto define = [](const pugi::xml_node& node, std::ostream& os)
+{
+	const auto lhs = node.first_child();
+    const auto rhs = lhs.next_sibling();
+    matlab::convert(lhs, os);
+	os << " = ";
+    matlab::convert(rhs, os);
+	os << ";\n";
+};
 static const std::unordered_map<std::string_view, converter_func> node_funcs = {
 	//{"document", traverse},
 	//{"worksheet", traverse},
@@ -68,7 +77,7 @@ static const std::unordered_map<std::string_view, converter_func> node_funcs = {
 	{"ml:real", echo},
 	{"ml:id", id},
 	{"ml:mult", operator_mult}, // closure would help
-	//{"ml:define", define},
+	{"ml:define", define},
 	//{"result", result},
 	//{"unitedValue", traverse},
 	//{"unitMonomial", traverse},

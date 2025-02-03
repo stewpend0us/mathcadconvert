@@ -101,6 +101,27 @@ TEST_CASE( "simple xml tags" )
         }
 
     }
+    SECTION( " define ")
+    {
+        auto define = init_tag(R"(
+        <ml:define xmlns:ml="http://schemas.mathsoft.com/math30">
+            <ml:id xml:space="preserve">ID</ml:id>
+            <ml:apply>
+                <ml:mult/>
+                <ml:real>18</ml:real>
+                <ml:id xml:space="preserve">mA</ml:id>
+       </ml:apply>
+        </ml:define>
+        )");
+        REQUIRE( sv(define.name()) == "ml:define");
+        REQUIRE( sv(define.first_child().name()) == "ml:id");
+
+        SECTION( "matlab" )
+        {
+            matlab::convert(define, os);
+            REQUIRE( os.str() == "ID = (18 * mA);\n" );
+        }
+    }
 //					<ml:parens>
 //						<ml:apply>
 //							<ml:minus/>
