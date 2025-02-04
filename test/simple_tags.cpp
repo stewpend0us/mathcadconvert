@@ -10,11 +10,14 @@ TEST_CASE( "simple xml tags" )
 {
 	pugi::xml_document doc;
 
-    auto init_tag = [&doc](const sv xml){
+    const auto init_doc = [&doc](const sv xml){
         std::string doc_tag = "<?xml?>";
         doc_tag += xml;
         auto result = doc.load_string(doc_tag.c_str());
         REQUIRE( result );
+    };
+    const auto init_tag = [&doc, &init_doc](const sv xml){
+        init_doc(xml);
         auto child = doc.first_child();
         REQUIRE( child.type() != pugi::node_null );
         return child;
@@ -82,7 +85,7 @@ TEST_CASE( "simple xml tags" )
             REQUIRE( os.str() == "(hello)" );
         }
     }
-    SECTION( "apply mult ")
+    SECTION( "apply mult" )
     {
         auto apply_mult = init_tag(R"(
         <ml:apply>
@@ -101,7 +104,7 @@ TEST_CASE( "simple xml tags" )
         }
 
     }
-    SECTION( " define ")
+    SECTION( "define" )
     {
         auto define = init_tag(R"(
         <ml:define xmlns:ml="http://schemas.mathsoft.com/math30">
@@ -119,7 +122,90 @@ TEST_CASE( "simple xml tags" )
         SECTION( "matlab" )
         {
             matlab::convert(define, os);
-            REQUIRE( os.str() == "ID = (18 * mA);\n" );
+            REQUIRE( os.str() == "ID = (18 * mA)" );
+        }
+    }
+    SECTION( "p comment" )
+    {
+        auto comment = init_tag("<p>some words</p>");
+        REQUIRE( sv(comment.name()) == "p");
+
+        SECTION( "matlab" )
+        {
+            matlab::convert(comment, os);
+            REQUIRE( os.str() == "\% some words" );
+        }
+    }
+    SECTION( "text and p comment" )
+    {
+        auto comment = init_tag(R"(
+		<text use-page-width="false" push-down="false" lock-width="true">
+			<p style="Normal" margin-left="inherit" margin-right="inherit" text-indent="inherit" text-align="inherit" list-style-type="inherit" tabs="inherit">some words</p>
+		</text>
+        )");
+        REQUIRE( sv(comment.name()) == "text");
+        REQUIRE( sv(comment.first_child().name()) == "p");
+
+        SECTION( "matlab" )
+        {
+            matlab::convert(comment, os);
+            REQUIRE( os.str() == "\% some words\n" );
+        }
+    }
+    SECTION( "document, worksheet, regions, region" )
+    {
+        init_doc(R"(
+        <worksheet version="3.0.3" xmlns="http://schemas.mathsoft.com/worksheet30" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ws="http://schemas.mathsoft.com/worksheet30" xmlns:ml="http://schemas.mathsoft.com/math30" xmlns:u="http://schemas.mathsoft.com/units10" xmlns:p="http://schemas.mathsoft.com/provenance10">
+            <regions>
+                <region>
+                    <ml:id>hello</ml:id>
+                </region>
+                <region>
+		            <text>
+		            	<p>some words</p>
+		            </text>
+                </region>
+                <region>
+                    <ml:real>0.7</ml:real>
+                </region>
+            </regions>
+        </worksheet>
+        )");
+        REQUIRE( sv(doc.name()) == "");
+        REQUIRE( sv(doc.first_child().name()) == "worksheet");
+
+        SECTION( "matlab" )
+        {
+            matlab::convert(doc, os);
+            REQUIRE( os.str() == "hello\% some words\n0.7" );
+        }
+    }
+    SECTION( "math, define, id, eval, apply, result" )
+    {
+        auto eval = init_tag(R"(
+        <math>
+		    <ml:define>
+		    	<ml:id xml:space="preserve" subscript="r">T</ml:id>
+		        <ml:eval placeholderMultiplicationStyle="default">
+		        	<ml:apply>
+		        		<ml:mult style="auto-select"/>
+		        		<ml:real>3</ml:real>
+		        		<ml:id xml:space="preserve">°</ml:id>
+		        	</ml:apply>
+		        	<result xmlns="http://schemas.mathsoft.com/math30">
+		        		<ml:real>0.5</ml:real>
+		        	</result>
+		        </ml:eval>
+            </ml:define>
+        </math>
+        )");
+        REQUIRE( sv(eval.name()) == "math");
+        REQUIRE( sv(eval.first_child().name()) == "ml:define");
+
+        SECTION( "matlab" )
+        {
+            matlab::convert(eval, os);
+            REQUIRE( os.str() == "T_r = (3 * °); \% expected result: 0.5;\n" );
         }
     }
 //					<ml:parens>
