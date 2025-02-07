@@ -23,6 +23,38 @@ TEST_CASE( "simple xml tags" )
         return child;
     };
 
+
+    const auto op_test = [&init_tag](const sv op_tag, const sv op_str){
+        std::string name("apply ");
+        name += op_tag;
+        std::ostringstream os;
+        SECTION( name )
+        {
+            std::string xml = R"(
+            <ml:apply>
+                <)";
+            xml += op_tag;
+            xml += R"(/>
+                <ml:real>0.039</ml:real>
+                <ml:id xml:space="preserve" subscript="t">V</ml:id>
+            </ml:apply>
+            )";
+
+            auto apply_tag = init_tag(xml);
+            REQUIRE( sv(apply_tag.name()) == "ml:apply");
+            REQUIRE( sv(apply_tag.first_child().name()) == op_tag);
+
+            SECTION( "matlab" )
+            {
+                matlab::convert(apply_tag, os);
+                std::string result = "(0.039 ";
+                result += op_str;
+                result += " V_t)";
+                REQUIRE( os.str() == result );
+            }
+        }
+    };
+
     std::ostringstream os;
 
     SECTION( "id tag" )
@@ -85,7 +117,7 @@ TEST_CASE( "simple xml tags" )
             REQUIRE( os.str() == "(hello)" );
         }
     }
-    SECTION( "apply mult" )
+    SECTION( "apply mult explicit" )
     {
         auto apply_mult = init_tag(R"(
         <ml:apply>
@@ -104,6 +136,30 @@ TEST_CASE( "simple xml tags" )
         }
 
     }
+    SECTION( "apply pow explicit" )
+    {
+        auto apply_mult = init_tag(R"(
+        <ml:apply>
+            <ml:pow/>
+            <ml:real>0.039</ml:real>
+            <ml:id xml:space="preserve" subscript="t">V</ml:id>
+        </ml:apply>
+        )");
+        REQUIRE( sv(apply_mult.name()) == "ml:apply");
+        REQUIRE( sv(apply_mult.first_child().name()) == "ml:pow");
+
+        SECTION( "matlab" )
+        {
+            matlab::convert(apply_mult, os);
+            REQUIRE( os.str() == "(0.039^V_t)" );
+        }
+
+    }
+    op_test("ml:plus", "+");
+    op_test("ml:minus", "-");
+    op_test("ml:mult", "*");
+    op_test("ml:div", "/");
+    op_test("ml:equal", "==");
     SECTION( "define" )
     {
         auto define = init_tag(R"(
@@ -208,23 +264,151 @@ TEST_CASE( "simple xml tags" )
             REQUIRE( os.str() == "T_r = (3 * °); \% expected result: 0.5;\n" );
         }
     }
-//					<ml:parens>
-//						<ml:apply>
-//							<ml:minus/>
-//							<ml:apply>
-//								<ml:pow/>
-//								<ml:id xml:space="preserve">e</ml:id>
-//								<ml:apply>
-//									<ml:div/>
-//									<ml:id xml:space="preserve">VD</ml:id>
-//									<ml:apply>
-//										<ml:mult/>
-//										<ml:real>0.039</ml:real>
-//										<ml:id xml:space="preserve">V</ml:id>
-//									</ml:apply>
-//								</ml:apply>
-//							</ml:apply>
-//							<ml:real>1</ml:real>
-//						</ml:apply>
-//					</ml:parens>
+    SECTION( "apply neg" )
+    {
+        auto apply = init_tag(R"(
+		<ml:apply>
+			<ml:neg/>
+            <ml:id>hello</ml:id>
+		</ml:apply>
+        )");
+        REQUIRE( sv(apply.name()) == "ml:apply");
+        REQUIRE( sv(apply.first_child().name()) == "ml:neg");
+
+        SECTION( "matlab" )
+        {
+            matlab::convert(apply, os);
+            REQUIRE( os.str() == "(-hello)" );
+        }
+    }
+    SECTION( "apply dunno one arg" )
+    {
+        auto apply = init_tag(R"(
+		<ml:apply>
+			<ml:dunno/>
+            <ml:id>hello</ml:id>
+		</ml:apply>
+        )");
+        REQUIRE( sv(apply.name()) == "ml:apply");
+        REQUIRE( sv(apply.first_child().name()) == "ml:dunno");
+
+        SECTION( "matlab" )
+        {
+            matlab::convert(apply, os);
+            REQUIRE( os.str() == "'apply' contains <ml:dunno> with one argument <ml:id>\n" );
+        }
+    }
+    SECTION( "apply dunno two args" )
+    {
+        auto apply = init_tag(R"(
+		<ml:apply>
+			<ml:dunno/>
+            <ml:id>hello</ml:id>
+            <ml:id>hello</ml:id>
+		</ml:apply>
+        )");
+        REQUIRE( sv(apply.name()) == "ml:apply");
+        REQUIRE( sv(apply.first_child().name()) == "ml:dunno");
+
+        SECTION( "matlab" )
+        {
+            matlab::convert(apply, os);
+            REQUIRE( os.str() == "'apply' contains <ml:dunno> with two arguments <ml:id>, <ml:id>\n" );
+        }
+    }
+    SECTION( "apply dunno three args" )
+    {
+        auto apply = init_tag(R"(
+		<ml:apply>
+			<ml:dunno/>
+            <ml:id>hello</ml:id>
+            <ml:id>hello</ml:id>
+            <ml:real>0.039</ml:real>
+		</ml:apply>
+        )");
+        REQUIRE( sv(apply.name()) == "ml:apply");
+        REQUIRE( sv(apply.first_child().name()) == "ml:dunno");
+
+        SECTION( "matlab" )
+        {
+            matlab::convert(apply, os);
+            REQUIRE( os.str() == "'apply' contains <ml:dunno> with three (or more) arguments <ml:id>, <ml:id>, <ml:real>\n" );
+        }
+    }
+    SECTION( "apply id four args" )
+    {
+        auto apply = init_tag(R"(
+		<ml:apply>
+			<ml:id>some_fun</ml:id>
+            <ml:id>hello</ml:id>
+            <ml:real>1</ml:real>
+            <ml:id>there</ml:id>
+            <ml:real>2</ml:real>
+		</ml:apply>
+        )");
+        REQUIRE( sv(apply.name()) == "ml:apply");
+        REQUIRE( sv(apply.first_child().name()) == "ml:id");
+
+        SECTION( "matlab" )
+        {
+            matlab::convert(apply, os);
+            REQUIRE( os.str() == "some_fun(hello, 1, there, 2)" );
+        }
+    }
+    SECTION( "apply dunno no args" )
+    {
+        auto apply = init_tag(R"(
+		<ml:apply>
+			<ml:dunno/>
+		</ml:apply>
+        )");
+        REQUIRE( sv(apply.name()) == "ml:apply");
+        REQUIRE( sv(apply.first_child().name()) == "ml:dunno");
+
+        SECTION( "matlab" )
+        {
+            matlab::convert(apply, os);
+            REQUIRE( os.str() == "'apply' contains <ml:dunno> and no other tags\n" );
+        }
+    }
+    SECTION( "apply tan" )
+    {
+        auto apply = init_tag(R"(
+		<ml:apply>
+			<ml:id xml:space="preserve">tan</ml:id>
+			<ml:id xml:space="preserve" subscript="b">a</ml:id>
+		</ml:apply>
+        )");
+        REQUIRE( sv(apply.name()) == "ml:apply");
+        REQUIRE( sv(apply.first_child().name()) == "ml:id");
+
+        SECTION( "matlab" )
+        {
+            matlab::convert(apply, os);
+            REQUIRE( os.str() == "tan(a_b)" );
+        }
+    }
+    SECTION( "unitReference" )
+    {
+        auto apply = init_tag(R"(<unitReference unit="radian"/>)");
+        REQUIRE( sv(apply.name()) == "unitReference");
+
+        SECTION( "matlab" )
+        {
+            matlab::convert(apply, os);
+            REQUIRE( os.str() == "radian" );
+        }
+    }
+    SECTION( "unitReference w/ power-numerator" )
+    {
+        auto apply = init_tag(R"(<unitReference unit="second" power-numerator="-2"/>)");
+        REQUIRE( sv(apply.name()) == "unitReference");
+
+        SECTION( "matlab" )
+        {
+            matlab::convert(apply, os);
+            REQUIRE( os.str() == "second^-2" );
+        }
+    }
+
 }
