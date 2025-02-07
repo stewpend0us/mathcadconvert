@@ -411,4 +411,120 @@ TEST_CASE( "simple xml tags" )
         }
     }
 
+    /*
+     * <p style="Normal" margin-left="inherit" margin-right="inherit" text-indent="inherit" text-align="inherit" list-style-type="inherit" tabs="inherit">- <b>Yellow highlights</b> represent user-set values. Motor parameters, desired PWM freq,</p>
+     * <p style="Normal" margin-left="inherit" margin-right="inherit" text-indent="inherit" text-align="inherit" list-style-type="inherit" tabs="inherit">KTHETA is the scale factor from dsp fractional units to radians.<sp count="2"/>It has the units of radians and means KTHETA radians = 1 dsp unit (2^15), or as the dsp angle ranges       from -1 to 1, theta ranges from -pi to pi radians</p>
+     * ml:imag
+     *  <ml:imag symbol="j">1</ml:imag>
+     *
+     * ml:function
+     *<ml:define xmlns:ml="http://schemas.mathsoft.com/math30">
+     *  <ml:function>
+     *    <ml:id xml:space="preserve">HVdc</ml:id>
+     *    <ml:boundVars>
+     *      <ml:id xml:space="preserve">z</ml:id>
+     *    </ml:boundVars>
+     *  </ml:function>
+     *  <ml:apply>
+     *    <ml:mult/>
+     * ...
+     * ml:absval (apply)
+     * plot
+     *  <plot disable-calc="false" item-idref="297"/>
+     * ml:range
+     * 
+     *<ml:define xmlns:ml="http://schemas.mathsoft.com/math30">
+     *  <ml:id xml:space="preserve">n</ml:id>
+     *  <ml:range>
+     *    <ml:real>0</ml:real>
+     *    <ml:id xml:space="preserve">nmax</ml:id>
+     *  </ml:range>
+     *</ml:define>
+     *
+     * ml:indexer (apply)
+     * <ml:apply>
+     *<ml:indexer/>
+     *  <ml:id xml:space="preserve">w</ml:id>
+     *  <ml:id xml:space="preserve">n</ml:id>
+     *</ml:apply>
+     *
+     * ml:unitOverride
+     * <ml:unitOverride>
+     *<ml:apply>
+     *  <ml:mult/>
+     *    <ml:id xml:space="preserve">gm</ml:id>
+     *    <ml:apply>
+     *      <ml:pow/>
+     *      <ml:id xml:space="preserve">cm</ml:id>
+     *      <ml:real>2</ml:real>
+     *    </ml:apply>
+     *  </ml:apply>
+     *</ml:unitOverride>
+     *
+     *<math optimize="false" disable-calc="false">
+     *  <ml:define xmlns:ml="http://schemas.mathsoft.com/math30">
+     *    <ml:id xml:space="preserve">VdspMax</ml:id>
+     *    <ml:apply>
+     *      <ml:id xml:space="preserve">if</ml:id>
+     *      <ml:sequence>
+     *        <ml:apply>
+     *          <ml:greaterThan/>
+     *          <ml:apply>
+     *            <ml:plus/>
+     *            <ml:apply>
+     *              <ml:mult/>
+     *              <ml:apply>
+     *                <ml:div/>
+     *                <ml:real>3.3</ml:real>
+     *                <ml:real>2</ml:real>
+     *              </ml:apply>
+     *              <ml:id xml:space="preserve">V</ml:id>
+     *            </ml:apply>
+     *            <ml:apply>
+     *              <ml:mult/>
+     *              <ml:apply>
+     *                <ml:mult/>
+     *                <ml:id xml:space="preserve">IlemHi</ml:id>
+     *                <ml:id xml:space="preserve">LEMgain</ml:id>
+     *              </ml:apply>
+     *              <ml:id xml:space="preserve">AnalogGain</ml:id>
+     *            </ml:apply>
+     *          </ml:apply>
+     *          <ml:apply>
+     *            <ml:mult/>
+     *            <ml:real>3.3</ml:real>
+     *            <ml:id xml:space="preserve">V</ml:id>
+     *          </ml:apply>
+     *        </ml:apply>
+     *        <ml:apply>
+     *          <ml:mult/>
+     *          <ml:real>3.3</ml:real>
+     *          <ml:id xml:space="preserve">V</ml:id>
+     *        </ml:apply>
+     *        <ml:apply>
+     *          <ml:plus/>
+     *          <ml:apply>
+     *            <ml:mult/>
+     *            <ml:apply>
+     *              <ml:div/>
+     *              <ml:real>3.3</ml:real>
+     *              <ml:real>2</ml:real>
+     *            </ml:apply>
+     *            <ml:id xml:space="preserve">V</ml:id>
+     *          </ml:apply>
+     *          <ml:apply>
+     *            <ml:mult/>
+     *            <ml:apply>
+     *              <ml:mult/>
+     *              <ml:id xml:space="preserve">IlemHi</ml:id>
+     *              <ml:id xml:space="preserve">LEMgain</ml:id>
+     *            </ml:apply>
+     *            <ml:id xml:space="preserve">AnalogGain</ml:id>
+     *          </ml:apply>
+     *        </ml:apply>
+     *      </ml:sequence>
+     *    </ml:apply>
+     *  </ml:define>
+     *</math>
+     */
 }
