@@ -479,20 +479,12 @@ TEST_CASE("simple xml tags")
  *  <ml:apply>
  *    <ml:mult/>
  * ...
- *
- *
- * ml:unitOverride
- * <ml:unitOverride>
- *<ml:apply>
- *  <ml:mult/>
- *    <ml:id xml:space="preserve">gm</ml:id>
- *    <ml:apply>
- *      <ml:pow/>
- *      <ml:id xml:space="preserve">cm</ml:id>
- *      <ml:real>2</ml:real>
- *    </ml:apply>
- *  </ml:apply>
- *</ml:unitOverride>
+ * 
+ *<ml:matrix rows="3" cols="1">
+ *  <ml:id xml:space="preserve" subscript="aansl">F</ml:id>
+ *  <ml:id xml:space="preserve" subscript="tw_a">F</ml:id>
+ *  <ml:id xml:space="preserve" subscript="tw_d">F</ml:id>
+ *</ml:matrix>
  *
  */
 }

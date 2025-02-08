@@ -28,6 +28,18 @@ static void multi(const pugi::xml_node &node, std::ostream &os, sv between)
 			os << between;
 	}
 }
+static void function_args(pugi::xml_node args, std::ostream &os)
+{
+	os << '(';
+	while (args)
+	{
+		matlab::convert(args, os);
+		args = args.next_sibling();
+		if (args)
+			os << ", ";
+	}
+	os << ')';
+}
 static void multimul(const pugi::xml_node &node, std::ostream &os)
 {
 	multi(node, os, " * ");
@@ -35,6 +47,11 @@ static void multimul(const pugi::xml_node &node, std::ostream &os)
 static void sequence(const pugi::xml_node &node, std::ostream &os)
 {
 	multi(node, os, ", ");
+}
+static void unitOverride(const pugi::xml_node &node, std::ostream &os)
+{
+    os << "; % ";
+    traverse(node,os);
 }
 static void echo(const pugi::xml_node &node, std::ostream &os)
 {
@@ -68,18 +85,6 @@ static void apply_op(const pugi::xml_node &a, sv op, const pugi::xml_node &b, st
 	matlab::convert(a, os);
 	os << sp << op << sp;
 	matlab::convert(b, os);
-	os << ')';
-}
-static void function_args(pugi::xml_node args, std::ostream &os)
-{
-	os << '(';
-	while (args)
-	{
-		matlab::convert(args, os);
-		args = args.next_sibling();
-		if (args)
-			os << ", ";
-	}
 	os << ')';
 }
 static void apply_function(const sv name, const pugi::xml_node& args, std::ostream &os)
@@ -247,6 +252,7 @@ static const std::unordered_map<std::string_view, converter_func> node_funcs = {
 		//{"unitedValue", traverse},
 		//{"unitMonomial", traverse},
 		//{"unitReference", extract_unit}, // closure would help
+		{"ml:unitOverride", unitOverride},
 };
 
 void matlab::convert(const pugi::xml_node &node, std::ostream &os)
@@ -256,11 +262,7 @@ void matlab::convert(const pugi::xml_node &node, std::ostream &os)
 		return;
 	const char *name = (t == pugi::xml_node_type::node_document) ? "document" : node.name();
 	if (auto func = node_funcs.find(name); func != node_funcs.end() && func->second)
-	{
 		func->second(node, os);
-	}
 	else
-	{
 		os << "'" << name << "' function not found\n";
-	}
 }
