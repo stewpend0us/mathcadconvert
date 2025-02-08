@@ -70,25 +70,38 @@ static void apply_op(const pugi::xml_node &a, sv op, const pugi::xml_node &b, st
 	matlab::convert(b, os);
 	os << ')';
 }
+static void function_args(pugi::xml_node args, std::ostream &os)
+{
+	os << '(';
+	while (args)
+	{
+		matlab::convert(args, os);
+		args = args.next_sibling();
+		if (args)
+			os << ", ";
+	}
+	os << ')';
+}
+static void apply_function(const sv name, const pugi::xml_node& args, std::ostream &os)
+{
+	os << name;
+    function_args(args, os);
+}
+static void apply_function(const pugi::xml_node fun, std::ostream &os)
+{
+	matlab::convert(fun, os);
+    function_args(fun.next_sibling(), os);
+}
 static void apply(const pugi::xml_node &node, std::ostream &os)
 {
 	const auto f = node.first_child();
 	const auto fname = sv(f.name());
 	if (fname == "ml:id")
-	{
-		matlab::convert(f, os);
-		os << '(';
-		auto next = f.next_sibling();
-		while (next)
-		{
-			matlab::convert(next, os);
-			next = next.next_sibling();
-			if (next)
-				os << ", ";
-		}
-		os << ')';
-		return;
-	}
+    {
+        if (sv(f.text().get()) == "if")
+            return apply_function("if_", f.next_sibling(), os);
+        return apply_function(f,os);
+    }
 
 	const auto a = f.next_sibling();
 	if (a.type() == pugi::xml_node_type::node_null)
@@ -107,19 +120,12 @@ static void apply(const pugi::xml_node &node, std::ostream &os)
 			return;
 		}
 		if (fname == "ml:sqrt")
-		{
-			os << "sqrt(";
-			matlab::convert(a, os);
-			os << ')';
-			return;
-		}
+            return apply_function("sqrt",a,os);
 		if (fname == "ml:Find")
-		{
-			os << "Find(";
-			matlab::convert(a, os);
-			os << ')';
-			return;
-		}
+            return apply_function("Find",a,os);
+        if (fname == "ml:absval")
+            return apply_function("abs",a,os);
+
 		os << "'apply' contains <" << fname << "> with one argument <" << a.name() << ">\n";
 		return;
 	}
@@ -138,6 +144,13 @@ static void apply(const pugi::xml_node &node, std::ostream &os)
 			return apply_op(a, "^", b, os, "");
 		if (fname == "ml:equal")
 			return apply_op(a, "==", b, os);
+		if (fname == "ml:greaterThan")
+			return apply_op(a, ">", b, os);
+		if (fname == "ml:lessThan")
+			return apply_op(a, "<", b, os);
+        if (fname == "ml:indexer")
+            return apply_function(a, os);
+
 		os << "'apply' contains <" << fname << "> with two arguments <" << a.name() << ">, <" << b.name() << ">\n";
 		return;
 	}
@@ -157,6 +170,16 @@ static void math(const pugi::xml_node &node, std::ostream &os)
 	matlab::convert(node.first_child(), os);
 	os << ";\n";
 }
+static void range(const pugi::xml_node &node, std::ostream &os)
+{
+	const auto a = node.first_child();
+    const auto b = a.next_sibling();
+    os << "((";
+    matlab::convert(a,os);
+    os << ':';
+    matlab::convert(b,os);
+    os << ") + ARRAY_OFFSET)";
+}
 static void text(const pugi::xml_node &node, std::ostream &os)
 {
 	matlab::convert(node.first_child(), os);
@@ -170,6 +193,15 @@ static void result(const pugi::xml_node &node, std::ostream &os)
 {
 	os << "; \% expected result: ";
 	matlab::convert(node.first_child(), os);
+}
+static void imag(const pugi::xml_node &node, std::ostream &os)
+{
+	const auto symbol = node.attribute("symbol");
+	os << node.text().get() << symbol.value();
+}
+static void plot(const pugi::xml_node &node, std::ostream &os)
+{
+    os << "\% a mathcad plot was here but there is no good way to know what was in it\n";
 }
 static const std::unordered_map<std::string_view, converter_func> node_funcs = {
 		{"document", traverse},
@@ -209,6 +241,9 @@ static const std::unordered_map<std::string_view, converter_func> node_funcs = {
 		{"unitMonomial", multimul},
 		{"unitedValue", multimul},
 		{"ml:sequence", sequence},
+		{"ml:imag", imag},
+        {"plot", plot},
+        {"ml:range", range},
 		//{"unitedValue", traverse},
 		//{"unitMonomial", traverse},
 		//{"unitReference", extract_unit}, // closure would help
