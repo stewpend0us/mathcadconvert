@@ -484,10 +484,24 @@ TEST_CASE("simple xml tags")
     		</ml:apply>
 		</ml:define>
 		)";
-    	auto apply = init_tag(xml);
-    	REQUIRE(sv(apply.name()) == "ml:define");
+    auto apply = init_tag(xml);
+    REQUIRE(sv(apply.name()) == "ml:define");
 
-    	run_test(apply, "HVdc = @(z) (3 * z)");
+    run_test(apply, "HVdc = @(z) (3 * z)");
+	}
+	SECTION("boundVars")
+	{
+		const sv xml = R"(
+		<ml:boundVars>
+			<ml:id xml:space="preserve">a</ml:id>
+			<ml:id xml:space="preserve">b</ml:id>
+			<ml:id xml:space="preserve">c</ml:id>
+		</ml:boundVars>
+		)";
+    auto apply = init_tag(xml);
+    REQUIRE(sv(apply.name()) == "ml:boundVars");
+
+    run_test(apply, " = @(a, b, c) ");
 	}
 /*
  * ml:function

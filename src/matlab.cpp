@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <string_view>
 #include "converter_func.hpp"
+#include <stdlib.h>
 
 using sv = std::string_view;
 
@@ -62,7 +63,9 @@ static void id(const pugi::xml_node &node, std::ostream &os)
 	os << node.text().get();
 	const auto subscript = node.attribute("subscript");
 	if (subscript)
+	{
 		os << '_' << subscript.value();
+	}
 }
 static void unitReference(const pugi::xml_node &node, std::ostream &os)
 {
@@ -90,12 +93,12 @@ static void apply_op(const pugi::xml_node &a, sv op, const pugi::xml_node &b, st
 static void apply_function(const sv name, const pugi::xml_node& args, std::ostream &os)
 {
 	os << name;
-    function_args(args, os);
+  function_args(args, os);
 }
 static void apply_function(const pugi::xml_node fun, std::ostream &os)
 {
 	matlab::convert(fun, os);
-    function_args(fun.next_sibling(), os);
+  function_args(fun.next_sibling(), os);
 }
 static void apply(const pugi::xml_node &node, std::ostream &os)
 {
@@ -177,7 +180,7 @@ static void define(const pugi::xml_node &node, std::ostream &os)
 static void boundVars(const pugi::xml_node &node, std::ostream &os)
 {
 	os << " = @(";
-	traverse(node,os);
+	multi(node,os,", ");
 	os << ") ";
 }
 static void math(const pugi::xml_node &node, std::ostream &os)
