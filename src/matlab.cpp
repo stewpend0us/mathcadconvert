@@ -165,10 +165,20 @@ static void apply(const pugi::xml_node &node, std::ostream &os)
 static void define(const pugi::xml_node &node, std::ostream &os)
 {
 	const auto lhs = node.first_child();
+	const auto fname = sv(lhs.name());
 	const auto rhs = lhs.next_sibling();
 	matlab::convert(lhs, os);
-	os << " = ";
+	if (fname != "ml:function")
+	{
+		os << " = ";
+	}
 	matlab::convert(rhs, os);
+}
+static void boundVars(const pugi::xml_node &node, std::ostream &os)
+{
+	os << " = @(";
+	traverse(node,os);
+	os << ") ";
 }
 static void math(const pugi::xml_node &node, std::ostream &os)
 {
@@ -253,6 +263,8 @@ static const std::unordered_map<std::string_view, converter_func> node_funcs = {
 		//{"unitMonomial", traverse},
 		//{"unitReference", extract_unit}, // closure would help
 		{"ml:unitOverride", unitOverride},
+		{"ml:function", traverse},
+		{"ml:boundVars", boundVars},
 };
 
 void matlab::convert(const pugi::xml_node &node, std::ostream &os)

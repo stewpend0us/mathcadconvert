@@ -467,17 +467,30 @@ TEST_CASE("simple xml tags")
     	run_test(apply, "V = if_((3.3 > 2), 3.3, 2);\n");
     }
 
+	SECTION("function definition")
+	{
+		const sv xml = R"(
+ 		<ml:define xmlns:ml="http://schemas.mathsoft.com/math30">
+   			<ml:function>
+     			<ml:id xml:space="preserve">HVdc</ml:id>
+     			<ml:boundVars>
+       				<ml:id xml:space="preserve">z</ml:id>
+     			</ml:boundVars>
+   			</ml:function>
+   			<ml:apply>
+     			<ml:mult/>
+				<ml:real>3</ml:real>
+				<ml:id>z</ml:id>
+    		</ml:apply>
+		</ml:define>
+		)";
+    	auto apply = init_tag(xml);
+    	REQUIRE(sv(apply.name()) == "ml:define");
+
+    	run_test(apply, "HVdc = @(z) (3 * z)");
+	}
 /*
  * ml:function
- *<ml:define xmlns:ml="http://schemas.mathsoft.com/math30">
- *  <ml:function>
- *    <ml:id xml:space="preserve">HVdc</ml:id>
- *    <ml:boundVars>
- *      <ml:id xml:space="preserve">z</ml:id>
- *    </ml:boundVars>
- *  </ml:function>
- *  <ml:apply>
- *    <ml:mult/>
  * ...
  * 
  *<ml:matrix rows="3" cols="1">
