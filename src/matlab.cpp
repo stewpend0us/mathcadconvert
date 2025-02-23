@@ -5,6 +5,8 @@
 #include <stdlib.h>
 
 using sv = std::string_view;
+std::set<std::string> defined_id;
+std::set<std::string> undefined_id;
 
 static void skip(const pugi::xml_node &node, std::ostream &os)
 {
@@ -58,14 +60,26 @@ static void echo(const pugi::xml_node &node, std::ostream &os)
 {
 	os << node.text().get();
 }
-static void id(const pugi::xml_node &node, std::ostream &os)
+static std::string id_string(const pugi::xml_node &node)
 {
-	os << node.text().get();
+	std::string id(node.text().get());
 	const auto subscript = node.attribute("subscript");
 	if (subscript)
 	{
-		os << '_' << subscript.value();
+		id += "_";
+		id += subscript.value();
 	}
+	return id;
+}
+static void id(const pugi::xml_node &node, std::ostream &os)
+{
+	std::string name = id_string(node);
+
+	auto it = std::find(defined_id.begin(), defined_id.end(), name);
+    if (it == defined_id.end())
+		undefined_id.insert(name);
+
+	os << name;
 }
 static void unitReference(const pugi::xml_node &node, std::ostream &os)
 {
@@ -170,6 +184,10 @@ static void define(const pugi::xml_node &node, std::ostream &os)
 	const auto lhs = node.first_child();
 	const auto fname = sv(lhs.name());
 	const auto rhs = lhs.next_sibling();
+	if (fname == "ml:id")
+	{
+		defined_id.insert(id_string(lhs));
+	}
 	matlab::convert(lhs, os);
 	if (fname != "ml:function")
 	{
@@ -280,4 +298,9 @@ void matlab::convert(const pugi::xml_node &node, std::ostream &os)
 		func->second(node, os);
 	else
 		os << "'" << name << "' function not found\n";
+}
+
+std::set<std::string> matlab::get_undefined_ids()
+{
+	return undefined_id;
 }

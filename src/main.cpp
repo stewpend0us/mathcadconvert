@@ -26,4 +26,7 @@ int main(int argc, char* argv[])
 	
 	auto convert = converters.at("matlab");
 	convert(doc, std::cout);
+	auto ids = matlab::get_undefined_ids();
+	for (auto& id : ids)
+		std::cout << id << " = ?\n";
 }
